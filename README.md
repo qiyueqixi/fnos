@@ -10,20 +10,8 @@
 ![image](https://github.com/user-attachments/assets/5cb15a46-07a5-4e2e-89dc-bbf948d56acc)
 
 ![image](https://github.com/user-attachments/assets/8bce4669-4ad2-461d-bfbd-3922ceb939a8)
- \
-# 使用方法
-（默认下载到tmp目录）
+
+# 一键运行命令
 ```shell
-#下载脚本
-#从Github运行
-wget https://raw.githubusercontent.com/qiyueqixi/fnos/main/network.sh -O /tmp/network.sh
-#从CloudFlare运行
-
-#赋予权限并运行
-
-chmod +x /tmp/network.sh
-sudo /tmp/network.sh
-
-#运行后删除（可选）
-rm /tmp/network.sh
+rm -f network.sh && wget http://blogpage.xiaozhuhouses.asia/api/fnscript/network.sh && chmod +x network.sh && ./network.sh
 ```
