@@ -11,4 +11,17 @@
 
 ![image](https://github.com/user-attachments/assets/8bce4669-4ad2-461d-bfbd-3922ceb939a8)
  \
-脚本每个功能均进行过测试，确保大部分状态环境下运行安全可靠！
+# 使用方法
+（默认下载到tmp目录）
+
+下载脚本
+1.Github
+wget https://raw.githubusercontent.com/qiyueqixi/fnos/main/network.sh -O /tmp/network.sh
+2.CloudFlare
+
+赋予权限并运行
+chmod +x /tmp/network.sh
+sudo /tmp/network.sh
+
+运行后删除（可选）
+rm /tmp/network.sh
