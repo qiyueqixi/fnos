@@ -13,15 +13,17 @@
  \
 # 使用方法
 （默认下载到tmp目录）
-
+```shell
 下载脚本
-1.Github
+1.从Github运行
 wget https://raw.githubusercontent.com/qiyueqixi/fnos/main/network.sh -O /tmp/network.sh
-2.CloudFlare
+2.从CloudFlare运行
 
 赋予权限并运行
+
 chmod +x /tmp/network.sh
 sudo /tmp/network.sh
 
 运行后删除（可选）
 rm /tmp/network.sh
+```
