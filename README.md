@@ -11,7 +11,32 @@
 
 ![image](https://github.com/user-attachments/assets/8bce4669-4ad2-461d-bfbd-3922ceb939a8)
 
-# 一键运行命令
+# 推荐一键运行命令（国内源）
 ```shell
 rm -f network.sh && wget http://blogpage.xiaozhuhouses.asia/api/fnscript/network.sh && chmod +x network.sh && ./network.sh
+```
+# 手动运行
+```shell
+#从Github运行
+wget https://raw.githubusercontent.com/qiyueqixi/fnos/main/network.sh -O /tmp/network.sh
+#从CloudFlare运行
+
+#赋予权限并运行
+
+chmod +x /tmp/network.sh
+sudo /tmp/network.sh
+
+#运行后删除（可选）
+rm /tmp/network.sh
+```
+# 本地运行
+```shell
+#下载到本地，然后上传到飞牛。
+#给脚本权限 
+chmod +x /tmp/network.sh
+#使用
+sudo /network.sh 
+#或者
+ ./network.sh  
+#运行即可
 ```
