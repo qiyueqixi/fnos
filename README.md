@@ -1,4 +1,4 @@
-## 一个专注于优化FnOS的脚本
+## 一个FnOS的脚本
 ![image](https://github.com/user-attachments/assets/69674873-9180-4b9c-9091-c8fd3d9c53d0)
 
 ![image](https://github.com/user-attachments/assets/ecd2a5eb-947c-4e3e-a37e-8960ce5dd128)
