@@ -648,6 +648,74 @@ convert_img_to_qcow2() {
     read -p "按回车键返回菜单..."
 }
 
+# 删除Docker数据目录
+delete_docker_data() {
+    printf "\n${GREEN}[2] 删除Docker数据目录${NC}\n"
+    
+    # 检查是否存在多个存储空间，排除 /vol00、/vol01、/vol02 等
+    VOL_DIRS=($(ls -d /vol[0-9]* 2>/dev/null | grep -vE "^/vol0[0-9]$"))
+    
+    if [ ${#VOL_DIRS[@]} -eq 0 ]; then
+        printf "${RED}错误：未找到任何存储空间目录！${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 显示可用的存储空间
+    printf "\n${CYAN}可用的存储空间：${NC}\n"
+    for i in "${!VOL_DIRS[@]}"; do
+        # 从路径中提取数字
+        vol_num=$(echo "${VOL_DIRS[$i]}" | grep -o '[0-9]\+$')
+        printf "$((i+1)). 存储空间$vol_num\n"
+    done
+
+    # 选择存储空间
+    read -p "请选择要操作的存储空间编号 (1-${#VOL_DIRS[@]}): " choice
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#VOL_DIRS[@]} ]; then
+        printf "${RED}错误：无效的选择！${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    selected_vol="${VOL_DIRS[$((choice-1))]}"
+    docker_dir="$selected_vol/1000/docker"
+
+    # 检查Docker目录是否存在
+    if [ ! -d "$docker_dir" ]; then
+        printf "${YELLOW}警告：在存储空间${selected_vol##*vol} 中未找到Docker数据目录！${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 显示警告信息
+    printf "\n${RED}警告：此操作将删除以下内容：${NC}\n"
+    printf "1. 所有Docker容器配置\n"
+    printf "2. 所有Docker镜像\n"
+    printf "3. 所有Docker网络配置\n"
+    printf "4. 所有Docker卷数据\n"
+    printf "5. 所有Docker服务配置\n"
+    printf "\n${RED}此操作不可恢复！${NC}\n"
+    printf "${RED}此操作不可恢复！${NC}\n"
+    printf "${RED}此操作不可恢复！${NC}\n"
+    
+    read -p "是否继续删除存储空间${selected_vol##*vol}中的Docker数据目录？(y/N): " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        printf "${YELLOW}操作已取消${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 执行删除
+    printf "\n${YELLOW}正在删除Docker数据目录...${NC}\n"
+    if sudo rm -rf "$docker_dir"; then
+        printf "${GREEN}Docker数据目录已成功删除！${NC}\n"
+        printf "${YELLOW}请重启Docker服务以应用更改。${NC}\n"
+    else
+        printf "${RED}删除失败！请检查权限或手动删除。${NC}\n"
+    fi
+    read -p "按回车键返回菜单..."
+}
+
 # 镜像管理菜单
 img_menu() {
     while true; do
@@ -664,10 +732,39 @@ img_menu() {
 
 # 主菜单
 show_menu() {
+    printf "${YELLOW}"
+    printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
+    printf " *                             _ooOoo_                         * \n"
+    printf " *                            o8888888o                        * \n"
+    printf " *                            88\" . \"88                        * \n"
+    printf " *                            (| -_- |)                        * \n"
+    printf " *                            O\\  =  /O                        * \n"
+    printf " *                         ____/\`---'\\____                     * \n"
+    printf " *                       .'  \\\\|     |//  \`.                   * \n"
+    printf " *                      /  \\\\|||  :  |||//  \\                  * \n"
+    printf " *                     /  _||||| -:- |||||-  \\                 * \n"
+    printf " *                     |   | \\\\\\  -  /// |   |                 * \n"
+    printf " *                     | \\_|  ''\\---/''  |   |                 * \n"
+    printf " *                     \\  .-\\__  \`-\`  ___/-. /                 * \n"
+    printf " *                   ___\\\\. .'  /--.--\\  \`. . __                * \n"
+    printf " *                .\"\" '<  \`.___\\_<|>_/___.'  >'\"\".             * \n"
+    printf " *               | | :  \`- \\\`.;\`\\ _ /\`;.\`/ - \` : | |           * \n"
+    printf " *               \\  \\ \`-.   \\_ __\\ /__ _/   .-\` /  /           * \n"
+    printf " *          ======\`-.____\`-.\\___\\_____/___.-\`____.-'======      * \n"
+    printf " *                             \`=---='                         * \n"
+    printf " *          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^      * \n"
+    printf " *                          佛祖保佑                            * \n"
+    printf " *              佛曰:                                          * \n"
+    printf " *                        所有牛友的NAS！                       * \n"
+    printf " *                   硬件不损坏，系统不崩溃！                    * \n"
+    printf " *                   硬盘不报错，数据不丢失！                    * \n"
+    printf " *                                                             * \n"
+    printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
+    printf "${NC}"
     printf "${BLUE}===================================\n"
-    printf "        飞牛管理工具\n"
+    printf "        飞牛工具箱\n"
     printf "===================================${NC}\n"
-    printf "1. 当前网络配置查询\n2. WiFi管理\n3. Swap管理\n4. 网络配置管理\n5. OVS网桥管理\n6. IOMMU硬件直通\n7. 镜像管理\n0. 退出\n"
+    printf "1. 当前网络配置查询\n2. WiFi管理\n3. Swap管理\n4. 网络配置管理\n5. OVS网桥管理\n6. IOMMU硬件直通\n7. 镜像管理\n8. 重置docker数据为出厂\n9. 将脚本安装到飞牛\n10. 升级脚本\n0. 退出\n"
     printf "${BLUE}===================================${NC}\n"
 }
 
@@ -675,7 +772,7 @@ show_menu() {
 check_dependencies
 while true; do
     show_menu
-    read -p "请输入选项数字 (0-7): " choice
+    read -p "请输入选项数字 (0-10): " choice
     case $choice in
         1) show_network_config ;; 
         2) wifi_menu ;; 
@@ -684,7 +781,188 @@ while true; do
         5) ovs_menu ;; 
         6) iommu_menu ;; 
         7) img_menu ;;
+        8) delete_docker_data ;;
+        9) install_menu ;;
+        10) upgrade_script ;;
         0) printf "${GREEN}已退出菜单。${NC}\n"; exit 0 ;;
-        *) printf "${RED}无效选项，请输入0-7的数字！${NC}\n"; sleep 1 ;;
+        *) printf "${RED}无效选项，请输入0-10的数字！${NC}\n"; sleep 1 ;;
     esac
 done
+
+# 安装管理菜单
+install_menu() {
+    while true; do
+        printf "\n${BLUE}=== 安装管理 ===\n"
+        printf "1. 安装脚本到系统\n2. 卸载脚本\n0. 返回主菜单${NC}\n"
+        read -p "请输入选项数字 (0-2): " install_choice
+        case $install_choice in
+            1) install_script ;;
+            2) uninstall_script ;;
+            0) break ;;
+            *) printf "${RED}无效选项，请输入0-2的数字！${NC}\n"; sleep 1 ;;
+        esac
+    done
+}
+
+# 将脚本安装到系统
+install_script() {
+    printf "\n${GREEN}[9] 将脚本安装到飞牛${NC}\n"
+    
+    # 检查root权限
+    if [ "$EUID" -ne 0 ]; then
+        printf "${RED}错误：此操作需要root权限！${NC}\n"
+        printf "请使用 sudo 运行此脚本。\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 获取当前脚本的路径
+    current_script="$(readlink -f "$0")"
+    if [ ! -f "$current_script" ]; then
+        printf "${RED}错误：无法获取当前脚本路径！${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 复制脚本到/root目录
+    printf "\n${YELLOW}正在安装脚本...${NC}\n"
+    if cp "$current_script" "/root/network_menu.sh"; then
+        # 设置执行权限
+        chmod +x "/root/network_menu.sh"
+        
+        # 检查.bashrc是否存在
+        if [ ! -f "/root/.bashrc" ]; then
+            touch "/root/.bashrc"
+        fi
+        
+        # 检查是否已经添加了自动执行命令
+        if ! grep -q "network_menu.sh" "/root/.bashrc"; then
+            # 添加执行命令到.bashrc
+            echo "" >> "/root/.bashrc"
+            echo "# 自动运行网络管理脚本" >> "/root/.bashrc"
+            echo "/root/network_menu.sh" >> "/root/.bashrc"
+        fi
+        
+        printf "${GREEN}脚本已成功安装到系统！${NC}\n"
+        printf "脚本位置：/root/network_menu.sh\n"
+        printf "下次root用户登录时将自动运行此脚本。\n"
+    else
+        printf "${RED}安装失败！请检查权限或手动安装。${NC}\n"
+    fi
+    
+    read -p "按回车键返回菜单..."
+}
+
+# 卸载脚本
+uninstall_script() {
+    printf "\n${GREEN}[10] 卸载脚本${NC}\n"
+    
+    # 检查root权限
+    if [ "$EUID" -ne 0 ]; then
+        printf "${RED}错误：此操作需要root权限！${NC}\n"
+        printf "请使用 sudo 运行此脚本。\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 检查脚本是否已安装
+    if [ ! -f "/root/network_menu.sh" ]; then
+        printf "${YELLOW}脚本未安装，无需卸载。${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 显示警告信息
+    printf "\n${RED}警告：此操作将：${NC}\n"
+    printf "1. 删除 /root/network_menu.sh 文件\n"
+    printf "2. 从 /root/.bashrc 中移除自动执行命令\n"
+    printf "\n${RED}此操作不可恢复！${NC}\n"
+    printf "${RED}此操作不可恢复！${NC}\n"
+    printf "${RED}此操作不可恢复！${NC}\n"
+    
+    read -p "是否继续卸载？(y/N): " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        printf "${YELLOW}操作已取消${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 从.bashrc中移除自动执行命令
+    printf "\n${YELLOW}正在移除自动执行命令...${NC}\n"
+    if [ -f "/root/.bashrc" ]; then
+        sed -i '/network_menu.sh/d' "/root/.bashrc"
+        sed -i '/自动运行网络管理脚本/d' "/root/.bashrc"
+    fi
+
+    # 删除脚本文件
+    printf "${YELLOW}正在删除脚本文件...${NC}\n"
+    if rm -f "/root/network_menu.sh"; then
+        printf "${GREEN}脚本已成功卸载！${NC}\n"
+        printf "下次root用户登录时将不再自动运行此脚本。\n"
+    else
+        printf "${RED}卸载失败！请检查权限或手动删除。${NC}\n"
+    fi
+    
+    read -p "按回车键返回菜单..."
+}
+
+# 升级脚本
+upgrade_script() {
+    printf "\n${GREEN}[3] 升级脚本${NC}\n"
+    
+    # 检查root权限
+    if [ "$EUID" -ne 0 ]; then
+        printf "${RED}错误：此操作需要root权限！${NC}\n"
+        printf "请使用 sudo 运行此脚本。\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 显示警告信息
+    printf "\n${RED}警告：此操作将：${NC}\n"
+    printf "1. 删除当前脚本\n"
+    printf "2. 下载最新版本\n"
+    printf "3. 替换为最新版本\n"
+    printf "\n${RED}此操作不可恢复！${NC}\n"
+    printf "${RED}此操作不可恢复！${NC}\n"
+    printf "${RED}此操作不可恢复！${NC}\n"
+    
+    read -p "是否继续升级？(y/N): " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        printf "${YELLOW}操作已取消${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 获取当前脚本的路径
+    current_script="$(readlink -f "$0")"
+    if [ ! -f "$current_script" ]; then
+        printf "${RED}错误：无法获取当前脚本路径！${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 删除当前脚本
+    printf "\n${YELLOW}正在删除当前脚本...${NC}\n"
+    if ! rm -f "$current_script"; then
+        printf "${RED}删除当前脚本失败！请检查权限。${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 下载新脚本
+    printf "${YELLOW}正在下载最新版本...${NC}\n"
+    if ! curl -L "https://raw.githubusercontent.com/qiyueqixi/fnos/refs/heads/main/network.sh" -o "$current_script"; then
+        printf "${RED}下载失败！请检查网络连接。${NC}\n"
+        read -p "按回车键返回菜单..."
+        return 1
+    fi
+
+    # 设置执行权限
+    chmod +x "$current_script"
+
+    printf "${GREEN}脚本已成功升级！${NC}\n"
+    printf "${YELLOW}请重新运行脚本以使用新版本。${NC}\n"
+    read -p "按回车键退出..."
+    exit 0
+}
