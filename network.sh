@@ -730,65 +730,6 @@ img_menu() {
     done
 }
 
-# 主菜单
-show_menu() {
-    printf "${YELLOW}"
-    printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
-    printf " *                             _ooOoo_                         * \n"
-    printf " *                            o8888888o                        * \n"
-    printf " *                            88\" . \"88                        * \n"
-    printf " *                            (| -_- |)                        * \n"
-    printf " *                            O\\  =  /O                        * \n"
-    printf " *                         ____/\`---'\\____                     * \n"
-    printf " *                       .'  \\\\|     |//  \`.                   * \n"
-    printf " *                      /  \\\\|||  :  |||//  \\                  * \n"
-    printf " *                     /  _||||| -:- |||||-  \\                 * \n"
-    printf " *                     |   | \\\\\\  -  /// |   |                 * \n"
-    printf " *                     | \\_|  ''\\---/''  |   |                 * \n"
-    printf " *                     \\  .-\\__  \`-\`  ___/-. /                 * \n"
-    printf " *                   ___\\\\. .'  /--.--\\  \`. . __                * \n"
-    printf " *                .\"\" '<  \`.___\\_<|>_/___.'  >'\"\".             * \n"
-    printf " *               | | :  \`- \\\`.;\`\\ _ /\`;.\`/ - \` : | |           * \n"
-    printf " *               \\  \\ \`-.   \\_ __\\ /__ _/   .-\` /  /           * \n"
-    printf " *          ======\`-.____\`-.\\___\\_____/___.-\`____.-'======      * \n"
-    printf " *                             \`=---='                         * \n"
-    printf " *          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^      * \n"
-    printf " *                          佛祖保佑                            * \n"
-    printf " *              佛曰:                                          * \n"
-    printf " *                        所有牛友的NAS！                       * \n"
-    printf " *                   硬件不损坏，系统不崩溃！                    * \n"
-    printf " *                   硬盘不报错，数据不丢失！                    * \n"
-    printf " *                                                             * \n"
-    printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
-    printf "${NC}"
-    printf "${BLUE}===================================\n"
-    printf "        飞牛工具箱\n"
-    printf "===================================${NC}\n"
-    printf "1. 当前网络配置查询\n2. WiFi管理\n3. Swap管理\n4. 网络配置管理\n5. OVS网桥管理\n6. IOMMU硬件直通\n7. 镜像管理\n8. 重置docker数据为出厂\n9. 将脚本安装到飞牛\n10. 升级脚本\n0. 退出\n"
-    printf "${BLUE}===================================${NC}\n"
-}
-
-# 主流程
-check_dependencies
-while true; do
-    show_menu
-    read -p "请输入选项数字 (0-10): " choice
-    case $choice in
-        1) show_network_config ;; 
-        2) wifi_menu ;; 
-        3) swap_menu ;; 
-        4) network_config_menu ;; 
-        5) ovs_menu ;; 
-        6) iommu_menu ;; 
-        7) img_menu ;;
-        8) delete_docker_data ;;
-        9) install_menu ;;
-        10) upgrade_script ;;
-        0) printf "${GREEN}已退出菜单。${NC}\n"; exit 0 ;;
-        *) printf "${RED}无效选项，请输入0-10的数字！${NC}\n"; sleep 1 ;;
-    esac
-done
-
 # 安装管理菜单
 install_menu() {
     while true; do
@@ -966,3 +907,62 @@ upgrade_script() {
     read -p "按回车键退出..."
     exit 0
 }
+
+# 主菜单
+show_menu() {
+    printf "${YELLOW}"
+    printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
+    printf " *                             _ooOoo_                         * \n"
+    printf " *                            o8888888o                        * \n"
+    printf " *                            88\" . \"88                        * \n"
+    printf " *                            (| -_- |)                        * \n"
+    printf " *                            O\\  =  /O                        * \n"
+    printf " *                         ____/\`---'\\____                     * \n"
+    printf " *                       .'  \\\\|     |//  \`.                   * \n"
+    printf " *                      /  \\\\|||  :  |||//  \\                  * \n"
+    printf " *                     /  _||||| -:- |||||-  \\                 * \n"
+    printf " *                     |   | \\\\\\  -  /// |   |                 * \n"
+    printf " *                     | \\_|  ''\\---/''  |   |                 * \n"
+    printf " *                     \\  .-\\__  \`-\`  ___/-. /                 * \n"
+    printf " *                   ___\\\\. .'  /--.--\\  \`. . __                * \n"
+    printf " *                .\"\" '<  \`.___\\_<|>_/___.'  >'\"\".             * \n"
+    printf " *               | | :  \`- \\\`.;\`\\ _ /\`;.\`/ - \` : | |           * \n"
+    printf " *               \\  \\ \`-.   \\_ __\\ /__ _/   .-\` /  /           * \n"
+    printf " *          ======\`-.____\`-.\\___\\_____/___.-\`____.-'======      * \n"
+    printf " *                             \`=---='                         * \n"
+    printf " *          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^      * \n"
+    printf " *                          佛祖保佑                            * \n"
+    printf " *              佛曰:                                          * \n"
+    printf " *                        所有牛友的NAS！                       * \n"
+    printf " *                   硬件不损坏，系统不崩溃！                    * \n"
+    printf " *                   硬盘不报错，数据不丢失！                    * \n"
+    printf " *                                                             * \n"
+    printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
+    printf "${NC}"
+    printf "${BLUE}===================================\n"
+    printf "        飞牛工具箱\n"
+    printf "===================================${NC}\n"
+    printf "1. 当前网络配置查询\n2. WiFi管理\n3. Swap管理\n4. 网络配置管理\n5. OVS网桥管理\n6. IOMMU硬件直通\n7. 镜像管理\n8. 重置docker数据为出厂\n9. 将脚本安装到飞牛\n10. 升级脚本\n0. 退出\n"
+    printf "${BLUE}===================================${NC}\n"
+}
+
+# 主流程
+check_dependencies
+while true; do
+    show_menu
+    read -p "请输入选项数字 (0-10): " choice
+    case $choice in
+        1) show_network_config ;; 
+        2) wifi_menu ;; 
+        3) swap_menu ;; 
+        4) network_config_menu ;; 
+        5) ovs_menu ;; 
+        6) iommu_menu ;; 
+        7) img_menu ;;
+        8) delete_docker_data ;;
+        9) install_menu ;;
+        10) upgrade_script ;;
+        0) printf "${GREEN}已退出菜单。${NC}\n"; exit 0 ;;
+        *) printf "${RED}无效选项，请输入0-10的数字！${NC}\n"; sleep 1 ;;
+    esac
+done
