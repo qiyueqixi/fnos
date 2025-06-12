@@ -42,9 +42,9 @@ install_script() {
 
     # 复制脚本到/root目录
     printf "\n${YELLOW}正在安装脚本...${NC}\n"
-    if cp "$current_script" "/root/network_menu.sh"; then
+    if cp "$current_script" "/root/fnnas.sh"; then
         # 设置执行权限
-        chmod +x "/root/network_menu.sh"
+        chmod +x "/root/fnnas.sh"
         
         # 检查.bashrc是否存在
         if [ ! -f "/root/.bashrc" ]; then
@@ -52,15 +52,15 @@ install_script() {
         fi
         
         # 检查是否已经添加了自动执行命令
-        if ! grep -q "network_menu.sh" "/root/.bashrc"; then
+        if ! grep -q "fnnas.sh" "/root/.bashrc"; then
             # 添加执行命令到.bashrc
             echo "" >> "/root/.bashrc"
-            echo "# 自动运行网络管理脚本" >> "/root/.bashrc"
-            echo "/root/network_menu.sh" >> "/root/.bashrc"
+            echo "# 自动运行飞牛系统管理工具" >> "/root/.bashrc"
+            echo "/root/fnnas.sh" >> "/root/.bashrc"
         fi
         
         printf "${GREEN}脚本已成功安装到系统！${NC}\n"
-        printf "脚本位置：/root/network_menu.sh\n"
+        printf "脚本位置：/root/fnnas.sh\n"
         printf "下次root用户登录时将自动运行此脚本。\n"
     else
         printf "${RED}安装失败！请检查权限或手动安装。${NC}\n"
@@ -82,7 +82,7 @@ uninstall_script() {
     fi
 
     # 检查脚本是否已安装
-    if [ ! -f "/root/network_menu.sh" ]; then
+    if [ ! -f "/root/fnnas.sh" ]; then
         printf "${YELLOW}脚本未安装，无需卸载。${NC}\n"
         read -p "按回车键返回菜单..."
         return 1
@@ -90,7 +90,7 @@ uninstall_script() {
 
     # 显示警告信息
     printf "\n${RED}警告：此操作将：${NC}\n"
-    printf "1. 删除 /root/network_menu.sh 文件\n"
+    printf "1. 删除 /root/fnnas.sh 文件\n"
     printf "2. 从 /root/.bashrc 中移除自动执行命令\n"
     printf "\n${RED}此操作不可恢复！${NC}\n"
     printf "${RED}此操作不可恢复！${NC}\n"
@@ -106,13 +106,13 @@ uninstall_script() {
     # 从.bashrc中移除自动执行命令
     printf "\n${YELLOW}正在移除自动执行命令...${NC}\n"
     if [ -f "/root/.bashrc" ]; then
-        sed -i '/network_menu.sh/d' "/root/.bashrc"
-        sed -i '/自动运行网络管理脚本/d' "/root/.bashrc"
+        sed -i '/fnnas.sh/d' "/root/.bashrc"
+        sed -i '/自动运行飞牛系统管理工具/d' "/root/.bashrc"
     fi
 
     # 删除脚本文件
     printf "${YELLOW}正在删除脚本文件...${NC}\n"
-    if rm -f "/root/network_menu.sh"; then
+    if rm -f "/root/fnnas.sh"; then
         printf "${GREEN}脚本已成功卸载！${NC}\n"
         printf "下次root用户登录时将不再自动运行此脚本。\n"
     else
@@ -139,6 +139,7 @@ upgrade_script() {
     printf "1. 删除当前脚本\n"
     printf "2. 下载最新版本\n"
     printf "3. 替换为最新版本\n"
+    printf "4. 更新所有子脚本\n"
     printf "\n${RED}此操作不可恢复！${NC}\n"
     printf "${RED}此操作不可恢复！${NC}\n"
     printf "${RED}此操作不可恢复！${NC}\n"
@@ -158,18 +159,43 @@ upgrade_script() {
         return 1
     fi
 
-    # 删除当前脚本
-    printf "\n${YELLOW}正在删除当前脚本...${NC}\n"
-    if ! rm -f "$current_script"; then
-        printf "${RED}删除当前脚本失败！请检查权限。${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
+    # 获取脚本所在目录
+    script_dir="$(dirname "$current_script")"
+    sh_dir="$script_dir/sh"
 
-    # 下载新脚本
-    printf "${YELLOW}正在下载最新版本...${NC}\n"
-    if ! curl -L "https://raw.githubusercontent.com/qiyueqixi/fnos/refs/heads/main/network.sh" -o "$current_script"; then
-        printf "${RED}下载失败！请检查网络连接。${NC}\n"
+    # 创建sh目录（如果不存在）
+    mkdir -p "$sh_dir"
+
+    # 定义需要下载的脚本列表
+    local scripts=(
+        "network_manage.sh"
+        "swap_manage.sh"
+        "iommu_manage.sh"
+        "qcow_manage.sh"
+        "docker_reset.sh"
+        "disk_manage.sh"
+        "install.sh"
+    )
+
+    # 下载并更新所有脚本
+    printf "${YELLOW}正在更新所有脚本...${NC}\n"
+    local base_url="https://raw.githubusercontent.com/qiyueqixi/fnos/main/sh"
+    
+    for script in "${scripts[@]}"; do
+        printf "${BLUE}更新 $script...${NC}\n"
+        if ! curl -L "$base_url/$script" -o "$sh_dir/$script"; then
+            printf "${RED}更新 $script 失败！${NC}\n"
+            read -p "按回车键返回菜单..."
+            return 1
+        fi
+        chmod +x "$sh_dir/$script"
+        printf "${GREEN}成功更新: $script${NC}\n"
+    done
+
+    # 下载主程序
+    printf "${YELLOW}正在更新主程序...${NC}\n"
+    if ! curl -L "https://raw.githubusercontent.com/qiyueqixi/fnos/main/fnnas.sh" -o "$current_script"; then
+        printf "${RED}更新主程序失败！请检查网络连接。${NC}\n"
         read -p "按回车键返回菜单..."
         return 1
     fi
@@ -177,7 +203,7 @@ upgrade_script() {
     # 设置执行权限
     chmod +x "$current_script"
 
-    printf "${GREEN}脚本已成功升级！${NC}\n"
+    printf "${GREEN}所有脚本已成功升级！${NC}\n"
     printf "${YELLOW}请重新运行脚本以使用新版本。${NC}\n"
     read -p "按回车键退出..."
     exit 0
