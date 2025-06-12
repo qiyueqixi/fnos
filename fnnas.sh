@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 功能说明：飞牛工具箱安装和升级脚本
+# 功能说明：飞牛系统管理工具主程序
 
 # 检查执行环境
 if [ -z "$BASH_VERSION" ]; then
@@ -20,190 +20,141 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # 恢复默认颜色
 
-# 将脚本安装到系统
-install_script() {
-    printf "\n${GREEN}[1] 将脚本安装到飞牛${NC}\n"
+# 创建sh目录（如果不存在）
+mkdir -p sh
+
+# 检查脚本文件是否存在
+check_scripts() {
+    local scripts=(
+        "network_manage.sh"
+        "swap_manage.sh"
+        "iommu_manage.sh"
+        "qcow_manage.sh"
+        "docker_reset.sh"
+        "disk_manage.sh"
+        "install.sh"
+    )
     
-    # 检查root权限
-    if [ "$EUID" -ne 0 ]; then
-        printf "${RED}错误：此操作需要root权限！${NC}\n"
-        printf "请使用 sudo 运行此脚本。\n"
-        read -p "按回车键返回菜单..."
+    local missing_scripts=()
+    
+    for script in "${scripts[@]}"; do
+        if [ ! -f "sh/$script" ]; then
+            missing_scripts+=("$script")
+        fi
+    done
+    
+    if [ ${#missing_scripts[@]} -gt 0 ]; then
+        printf "${YELLOW}检测到以下脚本文件缺失：${NC}\n"
+        for script in "${missing_scripts[@]}"; do
+            printf "${RED}- $script${NC}\n"
+        done
         return 1
     fi
-
-    # 获取当前脚本的路径
-    current_script="$(readlink -f "$0")"
-    if [ ! -f "$current_script" ]; then
-        printf "${RED}错误：无法获取当前脚本路径！${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
-
-    # 复制脚本到/root目录
-    printf "\n${YELLOW}正在安装脚本...${NC}\n"
-    if cp "$current_script" "/root/network_menu.sh"; then
-        # 设置执行权限
-        chmod +x "/root/network_menu.sh"
-        
-        # 检查.bashrc是否存在
-        if [ ! -f "/root/.bashrc" ]; then
-            touch "/root/.bashrc"
-        fi
-        
-        # 检查是否已经添加了自动执行命令
-        if ! grep -q "network_menu.sh" "/root/.bashrc"; then
-            # 添加执行命令到.bashrc
-            echo "" >> "/root/.bashrc"
-            echo "# 自动运行网络管理脚本" >> "/root/.bashrc"
-            echo "/root/network_menu.sh" >> "/root/.bashrc"
-        fi
-        
-        printf "${GREEN}脚本已成功安装到系统！${NC}\n"
-        printf "脚本位置：/root/network_menu.sh\n"
-        printf "下次root用户登录时将自动运行此脚本。\n"
-    else
-        printf "${RED}安装失败！请检查权限或手动安装。${NC}\n"
-    fi
     
-    read -p "按回车键返回菜单..."
+    return 0
 }
 
-# 卸载脚本
-uninstall_script() {
-    printf "\n${GREEN}[2] 卸载脚本${NC}\n"
+# 下载所需的脚本文件
+download_scripts() {
+    local base_url="https://raw.githubusercontent.com/qiyueqixi/fnos/main/sh"
+    local scripts=(
+        "network_manage.sh"
+        "swap_manage.sh"
+        "iommu_manage.sh"
+        "qcow_manage.sh"
+        "docker_reset.sh"
+        "disk_manage.sh"
+        "install.sh"
+    )
+
+    printf "${YELLOW}正在下载必要的脚本文件...${NC}\n"
     
-    # 检查root权限
-    if [ "$EUID" -ne 0 ]; then
-        printf "${RED}错误：此操作需要root权限！${NC}\n"
-        printf "请使用 sudo 运行此脚本。\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
-
-    # 检查脚本是否已安装
-    if [ ! -f "/root/network_menu.sh" ]; then
-        printf "${YELLOW}脚本未安装，无需卸载。${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
-
-    # 显示警告信息
-    printf "\n${RED}警告：此操作将：${NC}\n"
-    printf "1. 删除 /root/network_menu.sh 文件\n"
-    printf "2. 从 /root/.bashrc 中移除自动执行命令\n"
-    printf "\n${RED}此操作不可恢复！${NC}\n"
-    printf "${RED}此操作不可恢复！${NC}\n"
-    printf "${RED}此操作不可恢复！${NC}\n"
+    for script in "${scripts[@]}"; do
+        printf "${BLUE}下载 $script...${NC}\n"
+        if wget -q "$base_url/$script" -O "sh/$script"; then
+            chmod +x "sh/$script"
+            printf "${GREEN}成功下载并设置权限: $script${NC}\n"
+        else
+            printf "${RED}下载失败: $script${NC}\n"
+            return 1
+        fi
+    done
     
-    read -p "是否继续卸载？(y/N): " confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-        printf "${YELLOW}操作已取消${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
-
-    # 从.bashrc中移除自动执行命令
-    printf "\n${YELLOW}正在移除自动执行命令...${NC}\n"
-    if [ -f "/root/.bashrc" ]; then
-        sed -i '/network_menu.sh/d' "/root/.bashrc"
-        sed -i '/自动运行网络管理脚本/d' "/root/.bashrc"
-    fi
-
-    # 删除脚本文件
-    printf "${YELLOW}正在删除脚本文件...${NC}\n"
-    if rm -f "/root/network_menu.sh"; then
-        printf "${GREEN}脚本已成功卸载！${NC}\n"
-        printf "下次root用户登录时将不再自动运行此脚本。\n"
-    else
-        printf "${RED}卸载失败！请检查权限或手动删除。${NC}\n"
-    fi
-    
-    read -p "按回车键返回菜单..."
+    printf "${GREEN}所有脚本下载完成！${NC}\n"
+    return 0
 }
 
-# 升级脚本
-upgrade_script() {
-    printf "\n${GREEN}[3] 升级脚本${NC}\n"
-    
-    # 检查root权限
-    if [ "$EUID" -ne 0 ]; then
-        printf "${RED}错误：此操作需要root权限！${NC}\n"
-        printf "请使用 sudo 运行此脚本。\n"
-        read -p "按回车键返回菜单..."
+# 检查并下载缺失的脚本
+if ! check_scripts; then
+    printf "${YELLOW}正在下载缺失的脚本文件...${NC}\n"
+    if ! download_scripts; then
+        printf "${RED}脚本下载失败，请检查网络连接或手动下载脚本。${NC}\n"
+        exit 1
+    fi
+fi
+
+# 添加首次运行标志
+FIRST_RUN=true
+
+# 检查脚本是否存在
+check_script() {
+    local script_path="sh/$1"
+    if [ ! -f "$script_path" ]; then
+        printf "${RED}错误：找不到脚本 $script_path${NC}\n"
         return 1
     fi
+    return 0
+}
 
-    # 显示警告信息
-    printf "\n${RED}警告：此操作将：${NC}\n"
-    printf "1. 删除当前脚本\n"
-    printf "2. 下载最新版本\n"
-    printf "3. 替换为最新版本\n"
-    printf "\n${RED}此操作不可恢复！${NC}\n"
-    printf "${RED}此操作不可恢复！${NC}\n"
-    printf "${RED}此操作不可恢复！${NC}\n"
-    
-    read -p "是否继续升级？(y/N): " confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-        printf "${YELLOW}操作已取消${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
+# 执行脚本
+run_script() {
+    local script_name="$1"
+    if check_script "$script_name"; then
+        bash "sh/$script_name"
+    else
+        read -p "按回车键返回菜单..." dummy
     fi
-
-    # 获取当前脚本的路径
-    current_script="$(readlink -f "$0")"
-    if [ ! -f "$current_script" ]; then
-        printf "${RED}错误：无法获取当前脚本路径！${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
-
-    # 删除当前脚本
-    printf "\n${YELLOW}正在删除当前脚本...${NC}\n"
-    if ! rm -f "$current_script"; then
-        printf "${RED}删除当前脚本失败！请检查权限。${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
-
-    # 下载新脚本
-    printf "${YELLOW}正在下载最新版本...${NC}\n"
-    if ! curl -L "https://raw.githubusercontent.com/qiyueqixi/fnos/refs/heads/main/network.sh" -o "$current_script"; then
-        printf "${RED}下载失败！请检查网络连接。${NC}\n"
-        read -p "按回车键返回菜单..."
-        return 1
-    fi
-
-    # 设置执行权限
-    chmod +x "$current_script"
-
-    printf "${GREEN}脚本已成功升级！${NC}\n"
-    printf "${YELLOW}请重新运行脚本以使用新版本。${NC}\n"
-    read -p "按回车键退出..."
-    exit 0
 }
 
 # 主菜单
 show_menu() {
-    printf "${BLUE}===================================\n"
-    printf "        飞牛工具箱安装程序\n"
-    printf "===================================${NC}\n"
-    printf "1. 将脚本安装到飞牛 (脚本安装后进入root用户后会自动运行！！！)\n"
-    printf "2. 卸载脚本\n"
-    printf "3. 升级脚本\n"
-    printf "0. 退出\n"
-    printf "${BLUE}===================================${NC}\n"
+    if [ "$FIRST_RUN" = true ]; then
+        printf "${YELLOW}"
+        printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
+        printf " *                                                             * \n"
+        printf " *                    欢迎使用飞牛系统管理工具                 * \n"
+        printf " *                                                             * \n"
+        printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
+        printf "${NC}"
+        FIRST_RUN=false
+    fi
+    printf "${BLUE} * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n"
+    printf " *                                                             * \n"
+    printf " *  1. 网络管理                                               * \n"
+    printf " *  2. Swap管理                                               * \n"
+    printf " *  3. IOMMU硬件直通管理                                      * \n"
+    printf " *  4. QCOW镜像管理                                           * \n"
+    printf " *  5. Docker重置                                             * \n"
+    printf " *  6. 磁盘管理                                               * \n"
+    printf " *  7. 脚本管理                                               * \n"
+    printf " *  0. 退出                                                   * \n"
+    printf " *                                                             * \n"
+    printf " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ${NC}\n"
 }
 
 # 主流程
 while true; do
     show_menu
-    read -p "请输入选项数字 (0-3): " choice
+    read -p "请输入选项数字 (0-7): " choice
     case $choice in
-        1) install_script ;;
-        2) uninstall_script ;;
-        3) upgrade_script ;;
+        1) run_script "network_manage.sh" ;;
+        2) run_script "swap_manage.sh" ;;
+        3) run_script "iommu_manage.sh" ;;
+        4) run_script "qcow_manage.sh" ;;
+        5) run_script "docker_reset.sh" ;;
+        6) run_script "disk_manage.sh" ;;
+        7) run_script "install.sh" ;;
         0) printf "${GREEN}已退出菜单。${NC}\n"; exit 0 ;;
-        *) printf "${RED}无效选项，请输入0-3的数字！${NC}\n"; sleep 1 ;;
+        *) printf "${RED}无效选项，请输入0-7的数字！${NC}\n"; sleep 1 ;;
     esac
-done 
+done
